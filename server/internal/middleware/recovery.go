@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/ASNMortred/AI-Hackathon/internal/logger"
+	"github.com/ASNMortred/AI-Hackathon/server/internal/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
