@@ -30,12 +30,14 @@ func main() {
 	uploadHandler := handlers.NewUploadHandler(cfg)
 	playHandler := handlers.NewPlayHandler()
 	chatHandler := handlers.NewChatHandler()
+	healthHandler := handlers.NewHealthHandler()
 
 	v1 := router.Group("/api/v1")
 	{
 		v1.POST("/upload", uploadHandler.Upload)
 		v1.GET("/play/:videoID", playHandler.Play)
 		v1.POST("/chat", chatHandler.Chat)
+		v1.GET("/health", healthHandler.Health)
 	}
 
 	addr := ":" + cfg.Server.Port

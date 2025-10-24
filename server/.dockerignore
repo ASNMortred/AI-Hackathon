@@ -1,0 +1,61 @@
+# Git相关
+.git
+.gitignore
+.gitattributes
+
+# 构建产物
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试文件
+*.test
+coverage.txt
+coverage.html
+*.out
+
+# 依赖缓存（go.mod和go.sum已在Dockerfile中处理）
+vendor/
+
+# 上传文件（生产环境通过volume挂载）
+uploads/
+
+# 日志文件
+*.log
+logs/
+
+# IDE配置
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# 文档
+README.md
+*.md
+docs/
+
+# CI/CD配置
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker相关
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# 环境变量文件（如有敏感信息）
+.env
+.env.local
+.env.*.local
