@@ -1,4 +1,24 @@
-bin/
-uploads/
-*.log
+# IDE配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
+
+# 系统文件
+Thumbs.db
+desktop.ini
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+# 日志文件
+*.log
+
+# 环境变量文件
+.env
+.env.local

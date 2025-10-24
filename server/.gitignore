@@ -1,0 +1,42 @@
+# 二进制文件和构建产物
+bin/
+build/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试输出
+*.test
+*.out
+coverage.txt
+*.prof
+
+# 依赖和缓存
+vendor/
+
+# 日志文件
+*.log
+logs/
+
+# 上传文件目录
+uploads/
+
+# 环境配置文件（生产环境）
+config/prod.yaml
+app.env
+.env.production
+
+# IDE配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 临时文件
+tmp/
+temp/

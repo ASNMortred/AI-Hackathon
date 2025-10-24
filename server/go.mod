@@ -1,4 +1,4 @@
-module github.com/ASNMortred/AI-Hackathon
+module github.com/ASNMortred/AI-Hackathon/server
 
 go 1.24.5
 
