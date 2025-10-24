@@ -1,0 +1,25 @@
+server:
+  port: "8080"
+
+qiniu:
+  access_key: "your_qiniu_access_key"
+  secret_key: "your_qiniu_secret_key"
+  bucket: "your_bucket_name"
+
+upload:
+  max_size: 524288000
+  allowed_types:
+    - ".mp4"
+    - ".avi"
+    - ".mov"
+    - ".mkv"
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".gif"
+    - ".mp3"
+    - ".wav"
+    - ".zip"
+    - ".rar"
+    - ".7z"
+  upload_dir: "uploads"
