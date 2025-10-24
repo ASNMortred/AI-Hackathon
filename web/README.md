@@ -96,14 +96,14 @@ npm run preview
 
 ## API 配置
 
-项目使用代理配置将 `/api` 前缀的请求转发到后端服务器：
+项目使用代理配置将 `/api/v1` 前缀的请求转发到后端服务器：
 
 ```javascript
 // vite.config.js
 server: {
   proxy: {
-    '/api': {
-      target: 'http://localhost:8081',
+    '/api/v1': {
+      target: 'http://localhost:808',
       changeOrigin: true,
       rewrite: (path) => path.replace(/^\/api/, '')
     }
