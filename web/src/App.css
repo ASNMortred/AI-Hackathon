@@ -200,3 +200,27 @@
 .message-list::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* 登录/注册页面样式 */
+.login-register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #f0f2f5;
+}
+
+.login-register-card {
+  width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-register-form {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.login-register-form-button {
+  width: 100%;
+}

@@ -23,3 +23,10 @@ upload:
     - ".rar"
     - ".7z"
   upload_dir: "uploads"
+
+database:
+  host: "${DB_HOST}"
+  port: "${DB_PORT}"
+  user: "${DB_USER}"
+  password: "${DB_PASSWORD}"
+  name: "${DB_NAME}"

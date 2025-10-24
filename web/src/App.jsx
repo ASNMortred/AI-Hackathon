@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Input, Button, message } from 'antd';
-import { AudioOutlined, SendOutlined } from '@ant-design/icons';
+import { Input, Button, message, Form, Tabs, Card, Row, Col } from 'antd';
+import { AudioOutlined, SendOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
 import './App.css';
+
+const { TabPane } = Tabs;
 
 const App = () => {
   const [messages, setMessages] = useState([]);
@@ -12,6 +14,9 @@ const App = () => {
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState({});
   const [isWaitingForVoiceResponse, setIsWaitingForVoiceResponse] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [token, setToken] = useState('');
 
   const recognitionRef = useRef(null);
   const messageInputRef = useRef(null);
@@ -132,11 +137,20 @@ const App = () => {
 
   // 初始化
   useEffect(() => {
+    // 检查本地存储中是否有登录信息
+    const savedToken = localStorage.getItem('token');
+    const savedUsername = localStorage.getItem('username');
+    if (savedToken && savedUsername) {
+      setIsLoggedIn(true);
+      setToken(savedToken);
+      setUsername(savedUsername);
+    }
+
     const savedId = localStorage.getItem('memoryId');
     setMemoryId(savedId || generateMemoryId());
 
-    // 页面加载时的语音提示
-    if ('speechSynthesis' in window) {
+    // 页面加载时的语音提示（仅在已登录时显示）
+    if (isLoggedIn && 'speechSynthesis' in window) {
       const welcomeMessage = new SpeechSynthesisUtterance('欢迎使用语音输入功能，是否启用语音输入？');
       welcomeMessage.lang = 'zh-CN';
       window.speechSynthesis.speak(welcomeMessage);
@@ -152,7 +166,7 @@ const App = () => {
         };
       };
     }
-  }, []);
+  }, [isLoggedIn]);
 
   // 初始化语音识别
   useEffect(() => {
@@ -278,6 +292,7 @@ const App = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 添加认证头
         },
         body: JSON.stringify({
           memoryId: memoryId,
@@ -334,6 +349,140 @@ const App = () => {
     message.success('已开始新会话');
   };
 
+  // 用户注册
+  const handleRegister = async (values) => {
+    try {
+      const response = await fetch('/api/v1/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: values.username,
+          password: values.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        message.success('注册成功，请登录');
+      } else {
+        message.error(data.error || '注册失败');
+      }
+    } catch (error) {
+      console.error('注册错误:', error);
+      message.error('注册失败，请重试');
+    }
+  };
+
+  // 用户登录
+  const handleLogin = async (values) => {
+    try {
+      const response = await fetch('/api/v1/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: values.username,
+          password: values.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 保存登录信息到本地存储
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('username', data.username);
+        
+        // 更新状态
+        setIsLoggedIn(true);
+        setToken(data.token);
+        setUsername(data.username);
+        
+        message.success('登录成功');
+      } else {
+        message.error(data.error || '登录失败');
+      }
+    } catch (error) {
+      console.error('登录错误:', error);
+      message.error('登录失败，请重试');
+    }
+  };
+
+  // 用户登出
+  const handleLogout = () => {
+    // 清除本地存储的登录信息
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    
+    // 更新状态
+    setIsLoggedIn(false);
+    setToken('');
+    setUsername('');
+    
+    message.success('已退出登录');
+  };
+
+  // 如果用户未登录，显示登录/注册页面
+  if (!isLoggedIn) {
+    return (
+      <div className="app-layout" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ width: '400px' }}>
+          <Card title="云觅" bordered={false} style={{ width: '100%' }}>
+            <Tabs defaultActiveKey="1">
+              <TabPane tab="登录" key="1">
+                <Form onFinish={handleLogin}>
+                  <Form.Item
+                    name="username"
+                    rules={[{ required: true, message: '请输入用户名!' }]}
+                  >
+                    <Input prefix={<UserOutlined />} placeholder="用户名" />
+                  </Form.Item>
+                  <Form.Item
+                    name="password"
+                    rules={[{ required: true, message: '请输入密码!' }]}
+                  >
+                    <Input prefix={<LockOutlined />} type="password" placeholder="密码" />
+                  </Form.Item>
+                  <Form.Item>
+                    <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
+                      登录
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </TabPane>
+              <TabPane tab="注册" key="2">
+                <Form onFinish={handleRegister}>
+                  <Form.Item
+                    name="username"
+                    rules={[{ required: true, message: '请输入用户名!' }]}
+                  >
+                    <Input prefix={<UserOutlined />} placeholder="用户名" />
+                  </Form.Item>
+                  <Form.Item
+                    name="password"
+                    rules={[{ required: true, message: '请输入密码!' }]}
+                  >
+                    <Input prefix={<LockOutlined />} type="password" placeholder="密码" />
+                  </Form.Item>
+                  <Form.Item>
+                    <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
+                      注册
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </TabPane>
+            </Tabs>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // 用户已登录，显示聊天界面
   return (
     <div className="app-layout">
       {/* 左侧侧边栏 */}
@@ -341,9 +490,16 @@ const App = () => {
         <div className="avatar-block">
           <img src="/img/avatar.png" alt="云觅" className="avatar-img" />
           <div className="system-title">云觅</div>
+          <div style={{ marginTop: '10px', fontSize: '14px' }}>欢迎, {username}!</div>
         </div>
         <Button className="new-session-btn" onClick={newSession} aria-label="新会话">
           + 新会话
+        </Button>
+        <Button 
+          style={{ marginTop: '10px', width: '180px' }} 
+          onClick={handleLogout}
+        >
+          退出登录
         </Button>
       </aside>
 
