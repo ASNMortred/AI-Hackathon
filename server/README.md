@@ -1,6 +1,6 @@
 # AI-Hackathon Web Service
 
-基于Gin框架的Web服务项目，提供文件上传、视频播放和聊天功能的API接口。
+基于Gin框架的Web服务项目，提供文件上传、视频播放、聊天功能以及用户认证（登录/注册）的API接口。
 
 ## 项目结构
 
@@ -15,12 +15,21 @@
 │   ├── handlers/        # API处理器
 │   │   ├── upload.go
 │   │   ├── play.go
-│   │   └── chat.go
+│   │   ├── chat.go
+│   │   └── user.go
 │   ├── logger/          # 日志系统
 │   │   └── logger.go
-│   └── middleware/      # 中间件
-│       ├── logger.go
-│       └── recovery.go
+│   ├── middleware/      # 中间件
+│   │   ├── logger.go
+│   │   └── recovery.go
+│   ├── database/        # 数据库连接
+│   │   └── database.go
+│   ├── models/          # 数据模型
+│   │   └── user.go
+│   ├── dao/             # 数据访问对象
+│   │   └── user.go
+│   └── services/        # 业务逻辑层
+│       └── user.go
 ├── configs/             # 配置文件
 │   └── config.yaml
 ├── uploads/             # 上传文件存储目录
@@ -32,6 +41,8 @@
 - **Web框架**: Gin
 - **配置管理**: Viper + Pflag
 - **日志系统**: Zap
+- **数据库**: MySQL
+- **数据库驱动**: go-sql-driver/mysql
 - **语言版本**: Go 1.24.5
 
 ## 功能特性
@@ -53,6 +64,30 @@
 - 控制台输出接收信息
 - 返回确认响应
 
+### 4. 用户注册 (`POST /api/v1/register`)
+- 用户名和密码注册
+- 用户名唯一性验证
+- 数据库存储用户信息
+
+### 5. 用户登录 (`POST /api/v1/login`)
+- 用户名密码验证
+- 返回认证token
+- 基于数据库的用户验证
+
+## 数据库表结构
+
+```sql
+CREATE TABLE `users` (
+  `uid` int(11) NOT NULL AUTO_INCREMENT COMMENT '用户唯一标识(主键)',
+  `username` varchar(50) NOT NULL COMMENT '用户名',
+  `password` varchar(255) NOT NULL COMMENT '加密后的密码',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '最后修改时间',
+  PRIMARY KEY (`uid`),
+  UNIQUE KEY `idx_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+```
+
 ## 配置说明
 
 配置文件位于 `configs/config.yaml`：
@@ -73,6 +108,13 @@ upload:
     - ".avi"
     # ...
   upload_dir: "uploads"           # 上传目录
+
+database:
+  host: "localhost"               # 数据库主机
+  port: "3306"                    # 数据库端口
+  user: "root"                    # 数据库用户名
+  password: "password"            # 数据库密码
+  name: "ai_hackathon"            # 数据库名称
 ```
 
 ## 构建和运行
@@ -83,13 +125,32 @@ upload:
 go mod download
 ```
 
-### 2. 构建项目
+### 2. 数据库准备
+
+确保MySQL服务正在运行，并创建数据库：
+
+```sql
+CREATE DATABASE ai_hackathon;
+USE ai_hackathon;
+
+CREATE TABLE `users` (
+  `uid` int(11) NOT NULL AUTO_INCREMENT COMMENT '用户唯一标识(主键)',
+  `username` varchar(50) NOT NULL COMMENT '用户名',
+  `password` varchar(255) NOT NULL COMMENT '加密后的密码',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '最后修改时间',
+  PRIMARY KEY (`uid`),
+  UNIQUE KEY `idx_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+```
+
+### 3. 构建项目
 
 ```bash
 go build -o bin/server ./cmd/server
 ```
 
-### 3. 运行服务
+### 4. 运行服务
 
 使用默认配置文件：
 ```bash
@@ -101,7 +162,7 @@ go build -o bin/server ./cmd/server
 ./bin/server --config /path/to/config.yaml
 ```
 
-### 4. 开发模式运行
+### 5. 开发模式运行
 
 ```bash
 go run cmd/server/main.go
@@ -156,6 +217,39 @@ curl -X POST http://localhost:8080/api/v1/chat \
 }
 ```
 
+### 用户注册
+
+```bash
+curl -X POST http://localhost:8080/api/v1/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password": "testpass123"}'
+```
+
+响应：
+```json
+{
+  "message": "User registered successfully",
+  "username": "testuser"
+}
+```
+
+### 用户登录
+
+```bash
+curl -X POST http://localhost:8080/api/v1/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password": "testpass123"}'
+```
+
+响应：
+```json
+{
+  "message": "Login successful",
+  "username": "testuser",
+  "token": "token_testuser"
+}
+```
+
 ## 日志系统
 
 项目使用Zap进行结构化日志记录：
@@ -176,6 +270,7 @@ curl -X POST http://localhost:8080/api/v1/chat \
 3. 配置与代码分离
 4. 完善的错误处理机制
 5. 结构化日志记录
+6. 数据库访问层分离
 
 ## 后续扩展
 
