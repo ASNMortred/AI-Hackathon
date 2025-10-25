@@ -8,13 +8,15 @@
 
 ### Server端（后端服务）
 
-基于Golang + Gin框架开发的Web服务，提供文件上传、视频播放和聊天功能的RESTful API接口。
+基于Golang + Gin框架开发的Web服务，提供文件上传、视频播放、聊天功能以及用户认证（登录/注册）的RESTful API接口。
 
 **技术栈**：
-- 语言：Go 1.24.5
+- 语言：Go 1.20
 - Web框架：Gin
 - 配置管理：Viper + Pflag
 - 日志系统：Zap
+- 数据库：MySQL 8.0
+- 数据库驱动：go-sql-driver/mysql
 
 **详细文档**：请查看 [server/README.md](server/README.md)
 
@@ -44,6 +46,7 @@ docker-compose up -d
 访问地址：
 - 前端应用: http://localhost
 - 后端API: http://localhost:8080/api/v1
+- MySQL数据库: localhost:3306
 
 详细说明请查看：
 - 📖 [Docker部署完整指南](DOCKER_DEPLOYMENT.md)
