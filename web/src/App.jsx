@@ -268,7 +268,81 @@ const App = () => {
     }
   };
 
-  // 发送消息
+  // 将响应以流的方式读取，并兼容 SSE/NDJSON 与普通 JSON，确保前端正常流式显示或一次性回填 response 文本。
+  const readStreamToText = async (response, onDelta) => {
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+
+    // 非流式：JSON 一次性返回
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      const text = (data && data.data && data.data.response)
+        ? data.data.response
+        : (data && data.response)
+          ? data.response
+          : JSON.stringify(data);
+      onDelta(text);
+      return;
+    }
+
+    // 流式：SSE/NDJSON/文本
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // 逐行处理，兼容换行分隔
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || '';
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+
+        // SSE: 以 data: 开头
+        let payload = line.startsWith('data:') ? line.slice(5).trim() : line;
+        if (payload === '[DONE]') return;
+
+        let delta = '';
+        try {
+          const obj = JSON.parse(payload);
+          // OpenAI 风格流式：choices[0].delta.content 或 message.content
+          if (obj.choices && obj.choices.length) {
+            const ch = obj.choices[0];
+            delta = ch?.delta?.content ?? ch?.message?.content ?? ch?.text ?? '';
+          } else if (obj.data && obj.data.response) {
+            // 后端一次性或分片携带 {data:{response:...}}
+            delta = obj.data.response;
+          } else if (obj.response) {
+            delta = obj.response;
+          } else if (typeof obj === 'string') {
+            delta = obj;
+          }
+        } catch {
+          // 非 JSON 纯文本分片
+          delta = payload;
+        }
+
+        if (delta) onDelta(delta);
+      }
+    }
+
+    // 处理最后缓冲
+    const last = buffer.trim();
+    if (last) {
+      try {
+        const obj = JSON.parse(last);
+        const delta = obj?.data?.response ?? obj?.response ?? last;
+        onDelta(delta);
+      } catch {
+        onDelta(last);
+      }
+    }
+  };
+
   const sendMessage = async () => {
     if (isListening && recognitionRef.current) {
       recognitionRef.current.stop();
@@ -293,7 +367,7 @@ const App = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // 添加认证头
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           memoryId: memoryId,
@@ -302,37 +376,23 @@ const App = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let done = false;
-
-      let streamErrorOccurred = false;
-      while (!done) {
+        let detail = `HTTP ${response.status}`;
         try {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          if (value) {
-            const chunk = decoder.decode(value, { stream: true });
-            setMessages((prev) => {
-              const newMessages = [...prev];
-              newMessages[botMessageIndex].content += chunk;
-              return newMessages;
-            });
-          }
-        } catch (streamError) {
-          console.error('Stream reading error:', streamError);
-          setErrorMessage('流式传输失败，请重试');
-          streamErrorOccurred = true;
-          done = true;
-        }
+          const errJson = await response.json();
+          detail += `: ${errJson?.error ?? ''}`;
+        } catch {}
+        throw new Error(detail);
       }
 
-      if (!streamErrorOccurred) {
-        setErrorMessage('');
-      }
+      await readStreamToText(response, (chunkText) => {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          newMessages[botMessageIndex].content += chunkText;
+          return newMessages;
+        });
+      });
+
+      setErrorMessage('');
     } catch (error) {
       setErrorMessage('请求失败，请重试');
       console.error('请求错误:', error);

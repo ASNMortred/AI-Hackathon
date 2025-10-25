@@ -8,14 +8,90 @@ import sys
 from datetime import datetime
 import uuid
 import os
-from openai import OpenAI
+try:
+    from openai import OpenAI  # type: ignore
+except Exception:
+    OpenAI = None
+import requests
+import json
 
+# Qiniu OpenAI wrapper that mimics OpenAI client's chat.completions.create
+class ChatMessage:
+    def __init__(self, content: str):
+        self.content = content
+
+class Choice:
+    def __init__(self, message: 'ChatMessage'):
+        self.message = message
+
+class ChatCompletionsResponse:
+    def __init__(self, choices: List['Choice']):
+        self.choices = choices
+
+class QiniuOpenAIClient:
+    def __init__(self, api_key: str, base_url: str):
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
+        self.chat = self.Chat(self)
+
+    class Chat:
+        def __init__(self, parent: 'QiniuOpenAIClient'):
+            self._parent = parent
+            self.completions = self.Completions(parent)
+
+        class Completions:
+            def __init__(self, parent: 'QiniuOpenAIClient'):
+                self._parent = parent
+
+            def create(self, model: str, messages: List[Dict[str, str]], temperature: Optional[float] = None, max_tokens: Optional[int] = None, stream: bool = False):
+                url = f"{self._parent.base_url}/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {self._parent.api_key}",
+                    "Content-Type": "application/json",
+                }
+                payload: Dict[str, Any] = {
+                    "stream": bool(stream),
+                    "model": model,
+                    "messages": messages,
+                }
+                if temperature is not None:
+                    payload["temperature"] = temperature
+                if max_tokens is not None:
+                    payload["max_tokens"] = max_tokens
+
+                try:
+                    resp = requests.post(url, json=payload, headers=headers, timeout=30)
+                    resp.raise_for_status()
+                    data = resp.json()
+                except Exception as e:
+                    return ChatCompletionsResponse([Choice(ChatMessage(f"调用七牛AI出错: {str(e)}"))])
+
+                content_text: str = ""
+                if isinstance(data, dict):
+                    if "choices" in data and isinstance(data["choices"], list) and data["choices"]:
+                        ch0 = data["choices"][0]
+                        if isinstance(ch0, dict):
+                            if "message" in ch0 and isinstance(ch0["message"], dict):
+                                content_text = ch0["message"].get("content", "") or ""
+                            elif "text" in ch0:
+                                content_text = ch0.get("text") or ""
+                    if not content_text:
+                        content_text = data.get("data") or data.get("message") or ""
+                        if not content_text:
+                            try:
+                                content_text = json.dumps(data, ensure_ascii=False)
+                            except Exception:
+                                content_text = str(data)
+
+                return ChatCompletionsResponse([Choice(ChatMessage(content_text))])
+
+os.makedirs('./logs', exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler('/app/logs/mcp-service.log')
+        logging.FileHandler('./logs/mcp-service.log')
     ]
 )
 logger = logging.getLogger(__name__)
@@ -36,16 +112,16 @@ app.add_middleware(
 
 sessions: Dict[str, List[Dict[str, str]]] = {}
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
-openai_base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-openai_model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+openai_api_key = os.getenv("QiNiu_Ai_Key")
+openai_base_url = os.getenv("OPENAI_BASE_URL", "https://openai.qiniu.com/v1")
+openai_model = os.getenv("OPENAI_MODEL", "qwen-vl-max-2025-01-25")
 
 if openai_api_key:
-    client = OpenAI(api_key=openai_api_key, base_url=openai_base_url)
-    logger.info(f"OpenAI client initialized with model: {openai_model}")
+    client = QiniuOpenAIClient(api_key=openai_api_key, base_url=openai_base_url)
+    logger.info(f"Qiniu OpenAI client initialized with model: {openai_model}")
 else:
     client = None
-    logger.warning("OPENAI_API_KEY not set, using mock responses")
+    logger.warning("QiNiu_Ai_Key not set, using mock responses")
 
 class ChatRequest(BaseModel):
     message: str = Field(..., description="User input message")
@@ -184,3 +260,73 @@ if __name__ == "__main__":
         port=port,
         log_level="info"
     )
+
+# Qiniu OpenAI wrapper that mimics OpenAI client's chat.completions.create
+class ChatMessage:
+    def __init__(self, content: str):
+        self.content = content
+
+class Choice:
+    def __init__(self, message: 'ChatMessage'):
+        self.message = message
+
+class ChatCompletionsResponse:
+    def __init__(self, choices: List['Choice']):
+        self.choices = choices
+
+class QiniuOpenAIClient:
+    def __init__(self, api_key: str, base_url: str):
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
+        self.chat = self.Chat(self)
+
+    class Chat:
+        def __init__(self, parent: 'QiniuOpenAIClient'):
+            self._parent = parent
+            self.completions = self.Completions(parent)
+
+        class Completions:
+            def __init__(self, parent: 'QiniuOpenAIClient'):
+                self._parent = parent
+
+            def create(self, model: str, messages: List[Dict[str, str]], temperature: Optional[float] = None, max_tokens: Optional[int] = None, stream: bool = False):
+                url = f"{self._parent.base_url}/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {self._parent.api_key}",
+                    "Content-Type": "application/json",
+                }
+                payload: Dict[str, Any] = {
+                    "stream": bool(stream),
+                    "model": model,
+                    "messages": messages,
+                }
+                if temperature is not None:
+                    payload["temperature"] = temperature
+                if max_tokens is not None:
+                    payload["max_tokens"] = max_tokens
+
+                try:
+                    resp = requests.post(url, json=payload, headers=headers, timeout=30)
+                    resp.raise_for_status()
+                    data = resp.json()
+                except Exception as e:
+                    return ChatCompletionsResponse([Choice(ChatMessage(f"调用七牛AI出错: {str(e)}"))])
+
+                content_text: str = ""
+                if isinstance(data, dict):
+                    if "choices" in data and isinstance(data["choices"], list) and data["choices"]:
+                        ch0 = data["choices"][0]
+                        if isinstance(ch0, dict):
+                            if "message" in ch0 and isinstance(ch0["message"], dict):
+                                content_text = ch0["message"].get("content", "") or ""
+                            elif "text" in ch0:
+                                content_text = ch0.get("text") or ""
+                    if not content_text:
+                        content_text = data.get("data") or data.get("message") or ""
+                        if not content_text:
+                            try:
+                                content_text = json.dumps(data, ensure_ascii=False)
+                            except Exception:
+                                content_text = str(data)
+
+                return ChatCompletionsResponse([Choice(ChatMessage(content_text))])
