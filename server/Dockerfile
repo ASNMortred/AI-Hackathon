@@ -1,11 +1,19 @@
 # 第一阶段：构建阶段
 FROM golang:1.20-alpine AS builder
 
+# 配置Alpine国内镜像源（阿里云）
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+
 # 设置工作目录
 WORKDIR /build
 
 # 安装必要的构建工具
 RUN apk add --no-cache git ca-certificates tzdata
+
+# 配置Go模块代理（使用阿里云和七牛云镜像）
+ENV GO111MODULE=on \
+    GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,https://goproxy.io,direct \
+    GOSUMDB=sum.golang.google.cn
 
 # 优先复制依赖文件，利用Docker缓存
 COPY go.mod go.sum ./
@@ -24,6 +32,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
 
 # 第二阶段：运行阶段
 FROM alpine:latest
+
+# 配置Alpine国内镜像源（阿里云）
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # 设置工作目录
 WORKDIR /app
