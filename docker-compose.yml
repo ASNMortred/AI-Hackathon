@@ -15,7 +15,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - $HOME/ai-hackathon-data/mysql:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - $HOME/ai-hackathon-data/logs/mysql:/var/log/mysql
     networks:
@@ -46,7 +46,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio-data:/data
+      - $HOME/ai-hackathon-data/minio:/data
       - $HOME/ai-hackathon-data/logs/minio:/data/.minio.sys/logs
     networks:
       - ai-hackathon-network
@@ -142,9 +142,3 @@ services:
 networks:
   ai-hackathon-network:
     driver: bridge
-
-volumes:
-  mysql-data:
-    driver: local
-  minio-data:
-    driver: local
