@@ -54,8 +54,8 @@ COPY --from=builder /build/bin/server /app/server
 # 复制配置文件
 COPY configs/config.yaml /app/configs/config.yaml
 
-# 创建上传目录
-RUN mkdir -p /app/uploads
+# 创建上传目录和日志目录
+RUN mkdir -p /app/uploads /app/logs
 
 # 创建非 root 用户
 RUN addgroup -g 1000 appuser && \
