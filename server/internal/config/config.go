@@ -12,6 +12,7 @@ import (
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	QiNiu    QiNiuConfig    `mapstructure:"qiniu"`
+	Minio    MinioConfig    `mapstructure:"minio"`
 	Upload   UploadConfig   `mapstructure:"upload"`
 	Database DatabaseConfig `mapstructure:"database"`
 }
@@ -24,6 +25,14 @@ type QiNiuConfig struct {
 	AccessKey string `mapstructure:"access_key"`
 	SecretKey string `mapstructure:"secret_key"`
 	Bucket    string `mapstructure:"bucket"`
+}
+
+type MinioConfig struct {
+	Endpoint  string `mapstructure:"endpoint"`
+	AccessKey string `mapstructure:"access_key"`
+	SecretKey string `mapstructure:"secret_key"`
+	Bucket    string `mapstructure:"bucket"`
+	UseSSL    bool   `mapstructure:"use_ssl"`
 }
 
 type UploadConfig struct {
@@ -74,6 +83,11 @@ func expandEnvInConfig(cfg *Config) {
 	cfg.Database.User = os.ExpandEnv(cfg.Database.User)
 	cfg.Database.Password = os.ExpandEnv(cfg.Database.Password)
 	cfg.Database.Name = os.ExpandEnv(cfg.Database.Name)
+
+	cfg.Minio.Endpoint = os.ExpandEnv(cfg.Minio.Endpoint)
+	cfg.Minio.AccessKey = os.ExpandEnv(cfg.Minio.AccessKey)
+	cfg.Minio.SecretKey = os.ExpandEnv(cfg.Minio.SecretKey)
+	cfg.Minio.Bucket = os.ExpandEnv(cfg.Minio.Bucket)
 }
 
 func validateConfig(cfg *Config) error {
@@ -89,6 +103,19 @@ func validateConfig(cfg *Config) error {
 	}
 	if cfg.Database.Name == "" {
 		missing = append(missing, "DATABASE_NAME")
+	}
+	// MinIO basic validations (optional but helpful)
+	if cfg.Minio.Endpoint == "" {
+		missing = append(missing, "MINIO_ENDPOINT")
+	}
+	if cfg.Minio.AccessKey == "" {
+		missing = append(missing, "MINIO_ACCESS_KEY")
+	}
+	if cfg.Minio.SecretKey == "" {
+		missing = append(missing, "MINIO_SECRET_KEY")
+	}
+	if cfg.Minio.Bucket == "" {
+		missing = append(missing, "MINIO_BUCKET")
 	}
 	if len(missing) > 0 {
 		return fmt.Errorf("missing required env vars: %v", missing)
