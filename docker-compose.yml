@@ -17,7 +17,7 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      - ./logs/mysql:/var/log/mysql
+      - $HOME/ai-hackathon-data/logs/mysql:/var/log/mysql
     networks:
       - ai-hackathon-network
     healthcheck:
@@ -47,7 +47,7 @@ services:
       - "9001:9001"
     volumes:
       - minio-data:/data
-      - ./logs/minio:/data/.minio.sys/logs
+      - $HOME/ai-hackathon-data/logs/minio:/data/.minio.sys/logs
     networks:
       - ai-hackathon-network
     healthcheck:
@@ -73,9 +73,9 @@ services:
       - "8080:8080"
     volumes:
       # 持久化上传文件
-      - ./server/uploads:/app/uploads
+      - $HOME/ai-hackathon-data/server/uploads:/app/uploads
       # 持久化日志文件
-      - ./logs/server:/app/logs
+      - $HOME/ai-hackathon-data/logs/server:/app/logs
       # 可选：挂载配置文件以便动态修改
       - ./server/configs/config.yaml:/app/configs/config.yaml:ro
     environment:
@@ -120,7 +120,7 @@ services:
       - "80:80"
     volumes:
       # 持久化nginx日志
-      - ./logs/nginx:/var/log/nginx
+      - $HOME/ai-hackathon-data/logs/nginx:/var/log/nginx
     depends_on:
       - server
     environment:
