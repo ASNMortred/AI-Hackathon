@@ -1,5 +1,20 @@
 # 🚀 Docker 快速开始指南
 
+## 🇨🇳 国内用户优先配置（推荐）
+
+为了加速构建，建议国内用户先配置镜像源：
+
+```bash
+# 一键配置所有国内镜像源
+chmod +x setup-china-mirrors.sh
+sudo ./setup-china-mirrors.sh
+
+# 或者仅配置Docker镜像源
+sudo ./setup-china-mirrors.sh --docker
+```
+
+详细说明请查看：[CHINA_MIRROR_CONFIG.md](CHINA_MIRROR_CONFIG.md)
+
 ## 30秒快速部署
 
 ```bash

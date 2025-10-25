@@ -1,8 +1,14 @@
 # 第一阶段：构建阶段
 FROM node:18-alpine AS builder
 
+# 配置Alpine国内镜像源（阿里云）
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+
 # 设置工作目录
 WORKDIR /build
+
+# 配置npm国内镜像源（淘宝镜像）
+RUN npm config set registry https://registry.npmmirror.com
 
 # 优先复制依赖文件，利用Docker缓存
 COPY package.json package-lock.json ./
@@ -18,6 +24,9 @@ RUN npm run build
 
 # 第二阶段：运行阶段
 FROM nginx:alpine
+
+# 配置Alpine国内镜像源（阿里云）
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # 复制自定义nginx配置
 COPY nginx.conf /etc/nginx/conf.d/default.conf

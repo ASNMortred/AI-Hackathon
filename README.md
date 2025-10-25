@@ -51,6 +51,7 @@ docker-compose up -d
 详细说明请查看：
 - 📖 [Docker部署完整指南](DOCKER_DEPLOYMENT.md)
 - 🚀 [快速开始指南](QUICKSTART.md)
+- 🇨🇳 [国内镜像源配置](CHINA_MIRROR_CONFIG.md)
 
 ### 本地开发模式
 
