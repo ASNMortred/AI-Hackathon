@@ -17,6 +17,8 @@
 - 日志系统：Zap
 - 数据库：MySQL 8.0
 - 数据库驱动：go-sql-driver/mysql
+- 对象存储：MinIO
+- 文件上传：minio-go/v7
 
 **详细文档**：请查看 [server/README.md](server/README.md)
 
@@ -47,6 +49,8 @@ docker-compose up -d
 - 前端应用: http://localhost
 - 后端API: http://localhost:8080/api/v1
 - MySQL数据库: localhost:3306
+- MinIO控制台: http://localhost:9001 (用户名/密码: minioadmin/minioadmin)
+- MinIO API: http://localhost:9000
 
 详细说明请查看：
 - 📖 [Docker部署完整指南](DOCKER_DEPLOYMENT.md)

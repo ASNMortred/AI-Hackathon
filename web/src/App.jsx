@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input, Button, message, Form, Tabs, Card, Row, Col } from 'antd';
-import { AudioOutlined, SendOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
+import { AudioOutlined, SendOutlined, UserOutlined, LockOutlined, UploadOutlined } from '@ant-design/icons';
 import './App.css';
 
 const { TabPane } = Tabs;
@@ -21,6 +21,7 @@ const App = () => {
   const recognitionRef = useRef(null);
   const messageInputRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // 浏览器语音功能支持性检测
   const speechSupported = 'speechSynthesis' in window;
@@ -340,6 +341,42 @@ const App = () => {
     }
   };
 
+  const handleUploadClick = () => {
+    if (!isLoggedIn) {
+      message.warning('请先登录');
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const resp = await fetch('/api/v1/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        message.success('上传成功');
+        setMessages((prev) => [...prev, { content: `已上传文件：${file.name}\n链接：${data.url || ''}` , isUser: true }]);
+      } else {
+        message.error(data.error || '上传失败');
+      }
+    } catch (err) {
+      console.error('上传错误:', err);
+      message.error('上传失败，请重试');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
   // 新会话
   const newSession = () => {
     setMemoryId(generateMemoryId());
@@ -555,6 +592,15 @@ const App = () => {
                 icon={<AudioOutlined />}
               />
             )}
+            <input ref={fileInputRef} type="file" style={{ display: 'none' }} onChange={handleFileSelect} />
+            <Button
+              onClick={handleUploadClick}
+              aria-label="上传文件"
+              tabIndex="0"
+              title="上传文件"
+              className="upload-button"
+              icon={<UploadOutlined />}
+            />
             <Button
               type="primary"
               onClick={sendMessage}
@@ -566,7 +612,8 @@ const App = () => {
               icon={<SendOutlined />}
             >
               发送
-            </Button>
+            </Button
+            >
           </div>
         </section>
       </main>
